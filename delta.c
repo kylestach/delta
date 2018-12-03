@@ -88,9 +88,10 @@ bool inverse_kinematics(
         double center_to_center = sqrt(
                 dot(circle_center_offset, circle_center_offset));
 
-        // If the center-to-center is greater than the maximum possible
-        // distance we can reach, the problem is ill-defined.
-        if (center_to_center > circle_radius + params->arm_length_upper) {
+        // If the triangle inequality is violated, the problem is ill-defined.
+        if (center_to_center > circle_radius + params->arm_length_upper
+                || params->arm_length_upper > circle_radius + center_to_center
+                || circle_radius > params->arm_length_upper + center_to_center) {
             return false;
         }
 
@@ -192,12 +193,12 @@ void test(delta_robot_parameters* params, double x, double y, double z) {
                 position[0], position[1], position[2],
                 angles[0], angles[1], angles[2]);
                 */
-        printf("%f, %f, %f, %f, %f, %f\n",
+        fprintf(stdout, "%f, %f, %f, %f, %f, %f\n",
                 position[0], position[1], position[2],
                 angles[0], angles[1], angles[2]);
         verify(params, position, angles);
     } else {
-        printf("Cannot go to position (%f, %f, %f).\n",
+        fprintf(stderr, "Cannot go to position (%f, %f, %f).\n",
                 position[0], position[1], position[2]
                 );
     }
@@ -232,6 +233,8 @@ int main() {
         double t = i * .1;
         test(&params, (1 - t / 10) * cos(11 + t), (1 - t / 10) * sin(11 - t), -4 + t / 4.0);
     }
+
+    test(&params, 0, 0, 0);
 
     return 0;
 }
