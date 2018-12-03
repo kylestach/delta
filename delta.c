@@ -193,7 +193,7 @@ void test(delta_robot_parameters* params, double x, double y, double z) {
                 position[0], position[1], position[2],
                 angles[0], angles[1], angles[2]);
                 */
-        fprintf(stdout, "%f, %f, %f, %f, %f, %f\n",
+        fprintf(stdout, "%f %f %f %f %f %f\n",
                 position[0], position[1], position[2],
                 angles[0], angles[1], angles[2]);
         verify(params, position, angles);
@@ -231,7 +231,7 @@ int main() {
 
     for (int i = 0; i < 100; i++) {
         double t = i * .1;
-        test(&params, (1 - t / 10) * cos(11 + t), (1 - t / 10) * sin(11 - t), -4 + t / 4.0);
+        test(&params, (1 - t / 10) * cos(11 + t), (1 - t / 10) * sin(11 - t), -4 + 3.0 * t / 10.0);
     }
 
     test(&params, 0, 0, 0);
