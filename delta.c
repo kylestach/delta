@@ -117,10 +117,10 @@ bool inverse_kinematics(
 
         double phi = atan2(y, x);
 
-        double angle_offset_cos = -sqrt((
-                    circle_center_offset[0] * circle_center_offset[0]
-                    + circle_center_offset[1] * circle_center_offset[1])
-                / dot(circle_center_offset, circle_center_offset));
+        double angle_offset_cos = -(
+                    circle_center_offset[0] * cos(theta)
+                    + circle_center_offset[1] * sin(theta))
+                / sqrt(dot(circle_center_offset, circle_center_offset));
         double angle_offset = acos(angle_offset_cos);
         angles_out[i] = phi + angle_offset;
     }
@@ -221,17 +221,17 @@ int main() {
 
     for (int i = 0; i < 10; i++) {
         double t = i * .1;
-        test(&params, t * cos(t), t * sin(t), -4);
+        test(&params, 2 * t * cos(t), 2 * t * sin(t), -4);
     }
 
     for (int i = 0; i < 100; i++) {
         double t = i * .1;
-        test(&params, cos(1 + t), sin(1 + t), -4);
+        test(&params, 2 * cos(1 + t), 2 * sin(1 + t), -4);
     }
 
     for (int i = 0; i < 100; i++) {
         double t = i * .1;
-        test(&params, (1 - t / 10) * cos(11 + t), (1 - t / 10) * sin(11 - t), -4 + 3.0 * t / 10.0);
+        test(&params, 2 * (1 - t / 10) * cos(11 + t), 2 * (1 - t / 10) * sin(11 - t), -4 + 3.0 * t / 10.0);
     }
 
     test(&params, 0, 0, 0);
