@@ -29,6 +29,101 @@ double dot(
     return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
 }
 
+bool forwards_kinematics(
+        delta_robot_parameters* params,
+        double angles[3],
+        double position_out[3]) {
+    double offset_sphere_centers[3][3];
+    for (int i = 0; i < 3; i++) {
+        double theta = 2 * i * M_PI / 3.0;
+
+        double base_joint_pos[3];
+        {
+            base_joint_pos[0] = params->base_radius * cos(theta);
+            base_joint_pos[1] = params->base_radius * sin(theta);
+            base_joint_pos[2] = 0;
+        }
+
+        double manipulator_joint_offset[3];
+        {
+            manipulator_joint_offset[0] =
+                params->manipulator_radius * cos(theta);
+            manipulator_joint_offset[1] =
+                params->manipulator_radius * sin(theta);
+            manipulator_joint_offset[2] = 0;
+        }
+
+        double mid_joint_pos[3];
+        {
+            mid_joint_pos[0] = base_joint_pos[0]
+                + params->arm_length_upper * cos(theta) * cos(angles[i]);
+            mid_joint_pos[1] = base_joint_pos[1]
+                + params->arm_length_upper * sin(theta) * cos(angles[i]);
+            mid_joint_pos[2] = base_joint_pos[2]
+                - params->arm_length_upper * sin(angles[i]);
+        }
+
+        {
+            offset_sphere_centers[i][0] = mid_joint_pos[0]
+                - manipulator_joint_offset[0];
+            offset_sphere_centers[i][1] = mid_joint_pos[1]
+                - manipulator_joint_offset[1];
+            offset_sphere_centers[i][2] = mid_joint_pos[2]
+                - manipulator_joint_offset[2];
+        }
+    }
+
+    // Find the intersections of the spheres centered at
+    // `offset_sphere_centers[i]` with radius `params->arm_length_lower`.
+
+    // First, find the circle (center, radius, and normal vector) of the
+    // intersection between the first two spheres.
+
+    // The plane will be halfway between the two points (radii are the same).
+    double circle_center[3];
+    {
+        circle_center[0] = 0.5 * (offset_sphere_centers[0][0]
+                + offset_sphere_centers[1][0]);
+        circle_center[1] = 0.5 * (offset_sphere_centers[0][1]
+                + offset_sphere_centers[1][1]);
+        circle_center[2] = 0.5 * (offset_sphere_centers[0][1]
+                + offset_sphere_centers[1][1]);
+    }
+
+    // The normal vector points in the direction of their difference.
+    double circle_normal[3];
+    {
+        circle_normal[0] = offset_sphere_centers[0][0]
+            - offset_sphere_centers[1][0];
+        circle_normal[1] = offset_sphere_centers[0][1]
+            - offset_sphere_centers[1][1];
+        circle_normal[2] = offset_sphere_centers[0][2]
+            - offset_sphere_centers[1][2];
+    }
+
+    double circle_radius = sqrt(
+            params->arm_length_lower * params->arm_length_lower
+            - dot(circle_normal, circle_normal));
+
+    // Next, find the intersection with that plane and the third sphere.
+
+    // Project the third point into that plane.
+
+    // Find the radius of the new circle
+
+    // Find the intersection in 2d space
+
+    for (int i = 0; i < 3; i++) {
+        // For each position[i], we have:
+        // |(offset_sphere_centers[i] - position[i])| = params->arm_length_lower
+        // |(offset_sphere_centers[i])|^2
+        //          - 2 * dot(offset_sphere_centers[i], position[i])
+        //          + |(position[i])|^2
+        //      = (params->arm_length_lower)^2
+        double x = params->arm_length_lower * params->arm_length_lower - dot(offset_sphere_centers[i], offset_sphere_centers[i]);
+    }
+}
+
 bool inverse_kinematics(
         delta_robot_parameters* params,
         double position[3],
@@ -171,7 +266,7 @@ bool verify(
 
         double error = distance_lower_arm - params->arm_length_lower;
         if (fabs(error) > 1e-6) {
-            printf("Error: %f\n", error);
+            printf("Error: %f on %d\n", error, i);
             abort();
         }
     }
@@ -219,19 +314,19 @@ int main() {
         test(&params, 0, 0, -6 + i * 0.1);
     }
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 100; i++) {
         double t = i * .1;
-        test(&params, 2 * t * cos(t), 2 * t * sin(t), -4);
+        test(&params, 2 * (t / 10) * cos(t), 2 * (t / 10) * sin(t), -4);
     }
 
     for (int i = 0; i < 100; i++) {
         double t = i * .1;
-        test(&params, 2 * cos(1 + t), 2 * sin(1 + t), -4);
+        test(&params, 2 * cos(10 + t), 2 * sin(10 + t), -4);
     }
 
     for (int i = 0; i < 100; i++) {
         double t = i * .1;
-        test(&params, 2 * (1 - t / 10) * cos(11 + t), 2 * (1 - t / 10) * sin(11 - t), -4 + 3.0 * t / 10.0);
+        test(&params, 2 * (1 - t / 10) * cos(20 + t), 2 * (1 - t / 10) * sin(20 + t), -4 + 3.0 * t / 10.0);
     }
 
     test(&params, 0, 0, 0);
